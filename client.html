@@ -1,143 +1,84 @@
 <html>
 	<head>
-	<!-- 
-	 * Author:		Gianluca Guarini
-	 * Contact: 	gianluca.guarini@gmail.com
-	 * Website:		http://www.gianlucaguarini.com/
-	 * Twitter:		@gianlucaguarini
-	-->
-		<title>Push notification server streaming on a MySQL db</title>
-		<style>
-			dd,dt {
-				float:left;
-				margin:0;
-				padding:5px;
-				clear:both;
-				display:block;
-				width:100%;
-
-			}
-			dt {
-				background:#ddd;
-			}
-			time {
-				color:gray;
-			}
-		</style>
+		<title>Real Time database Notification</title>
 	</head>
 	<body>
-        <time></time>
-        <div id="container">Loading ...</div>
+        <!-- <div id="container">Loading ...</div> -->
     <script src="socket.io/socket.io.js"></script>
     <script src="http://code.jquery.com/jquery-latest.min.js"></script>
     <th><INPUT type="checkbox" onchange="checkAll(this)" name="chk[]" /> Check/Uncheck All </th>
     <div class="checkBoxUserContainer"></div>
     <div class="checkBoxFieldContainer"></div>
-    <div class="notificationContainer"></div>
+    <div class="userDataContainer"></div>
     <script>
+    	var socket = io.connect('http://localhost:8000');
+		socket.on('ehlo', function(data) {
+		    var userArray = [];
+		    var fieldArray = Object.keys(data.users[0]);
+		    $.each(data.users, function(index, user) {
+		        userArray.push(user)
 
-        // create a new websocket
-        var socket = io.connect('http://localhost:8000');
-        // on message received we print all the data inside the #container div
-        
+		    });
+		    $(document).ready(function() {
+		        $.each(userArray, function(index, value) {
+		            var checkbox = "<label for=" + value.user_id + ">" + value.user_name + "</label><input type='checkbox' id=" + value.user_id + " value=" + value.user_id + " name= 'user'>"
+		            $(".checkBoxUserContainer").append($(checkbox));
 
-      	socket.on('ehlo' , function(data){
-//       				        var checkbox = document.createElement('input');
-// checkbox.type = "checkbox";
-// checkbox.name = "name";
-// checkbox.value = "value";
-// checkbox.id = "id";
+		        })
+		        $.each(fieldArray, function(index, value) {
+		            var checkbox = "<label for=" + value + ">" + value + "</label><input type='checkbox' id=" + value + " value=" + value + " name= 'field'>"
+		            $(".checkBoxFieldContainer").append($(checkbox));
+		        })
+		    });
+		})
+		socket.on('notification', function(data) {
+		    var userChecked = [];
+		    $.each($("input[name='user']:checked"), function() {
+		        userChecked.push($(this).val());
+		    });
+		    var fieldChecked = [];
+		    $.each($("input[name='field']:checked"), function() {
+		        fieldChecked.push($(this).val());
+		    });
+		    var usersList = "<div>";
+		    $.each(data.users, function(index, user) {
+		        var foundUser = $.inArray(String(user.user_id), userChecked) > -1
+		        if (foundUser) {
+		        	usersList += "<li>";
+		            var fieldArray = Object.keys(data.users[0]);
 
-// var label = document.createElement('label')
-// label.htmlFor = "id";
-// label.appendChild(document.createTextNode('text for label after checkbox'));
+		            $.each(fieldArray, function(index, field) {
+		                var foundField = $.inArray(String(field), fieldChecked) > -1
+		                if (foundField) {
+		                    usersList += "<div>" + user[field] + "\n" +
+		                        "</div>";
+		                }
+		            });
 
-// container.appendChild(checkbox);
-// container.appendChild(label);
+		            usersList += "</div>";
+		        }
+		    });
+		    usersList += " </li>";
+		    $(".userDataContainer").html($(usersList));
+		});
+		
+		function checkAll(ele) {
+		    var checkboxes = document.getElementsByTagName('input');
+		    if (ele.checked) {
+		        for (var i = 0; i < checkboxes.length; i++) {
+		            if (checkboxes[i].type == 'checkbox') {
+		                checkboxes[i].checked = true;
+		            }
+		        }
+		    } else {
+		        for (var i = 0; i < checkboxes.length; i++) {
 
-
-
-
-console.log(data)
-var userArray =[];
-// to get the value of fields
-var fieldArray = Object.keys(data.users[0]);
-	$.each(data.users,function(index,user){
-		userArray.push(user)
-
-	});
-
-	$(document).ready(function(){
-
-
-			$.each(userArray,function(index,value){
-				var checkbox="<label for="+value.user_id+">"+value.user_name+"</label><input type='checkbox' id="+value.user_id+" value="+value.user_id+" name= 'user'>"
-				$(".checkBoxUserContainer").append($(checkbox));
-				console.log(value)
-			})
-
-			$.each(fieldArray,function(index,value){
-				var checkbox="<label for="+value+">"+value+"</label><input type='checkbox' id="+value+" value="+value+" name= 'field'>"
-				$(".checkBoxFieldContainer").append($(checkbox));
-			})
-
-
-	});
-
-	socket.on('notification', function (data) {
-		 
-		        var userChecked = [];
-            	$.each($("input[name='user']:checked"), function(){            
-                	userChecked.push($(this).val());
-            	});
-            	var fieldChecked = [];
-            	$.each($("input[name='field']:checked"), function(){            
-                	fieldChecked.push($(this).val());
-            	});
-
-            	var usersList = "<div>";
-		        $.each(data.users,function(index,user){
-		        	var foundUser = $.inArray(String(user.user_id), userChecked) > -1
-		        	if(foundUser){
-
-		          		var fieldArray = Object.keys(data.users[0]);
-		          		console.log(fieldArray)
-		          		$.each(fieldArray,function(index,field){
-				        	var foundField = $.inArray(String(field), fieldChecked) > -1
-				        	if(foundField){
-				        		usersList += "<dd>" + user[field] + "\n" +
-				                         "</dd>";
-				        	}
-				        });
-
-		        	}
-		        });
-		        usersList += " </div>";
-		        $(".notificationContainer").html($(usersList));
-      	});
-
-
-      	})
-
-
-function checkAll(ele) {
-     var checkboxes = document.getElementsByTagName('input');
-     if (ele.checked) {
-         for (var i = 0; i < checkboxes.length; i++) {
-             if (checkboxes[i].type == 'checkbox') {
-                 checkboxes[i].checked = true;
-             }
-         }
-     } else {
-         for (var i = 0; i < checkboxes.length; i++) {
-             console.log(i)
-             if (checkboxes[i].type == 'checkbox') {
-                 checkboxes[i].checked = false;
-             }
-         }
-     }
- }
-
+		            if (checkboxes[i].type == 'checkbox') {
+		                checkboxes[i].checked = false;
+		            }
+		        }
+		    }
+		}
     </script>
     </body>
 </html>
