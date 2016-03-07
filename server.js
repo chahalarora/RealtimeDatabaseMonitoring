@@ -10,7 +10,7 @@ var app = require('http').createServer(handler),
         database: 'socketTest', //Database name
         port: 3306
     }),
-    POLLING_INTERVAL = 3000,
+    POLLING_INTERVAL = 100,
     pollingTimer;
 
 // If there is an error connecting to the database
