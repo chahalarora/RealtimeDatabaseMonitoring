@@ -91,7 +91,7 @@ var getUsersData = function() {
     .on('error', function(err) {
       // Handle error, and 'end' event will be emitted after this as well
       console.log(err);
-      sendList(err);
+      sendUsersData(err);
     })
     .on('result', function(user) {
       // it fills our array looping on each user row inside the db
@@ -105,6 +105,32 @@ var getUsersData = function() {
         });
     });
 };
+
+// var getFieldData = function() {
+
+//   // Doing the database query
+//   var query = connection.query('SELECT column_name FROM information_schema.columns WHERE table_name = "users"'),
+//     fields = []; // this array will contain the result of our db query
+
+//   // setting the query listeners
+//   query
+//     .on('error', function(err) {
+//       // Handle error, and 'end' event will be emitted after this as well
+//       console.log(err);
+//       sendFieldData(err);
+//     })
+//     .on('result', function(field) {
+//       // it fills our array looping on each user row inside the db
+//       fields.push(field);
+//     })
+//     .on('end', function() {
+//       // loop on itself only if there are sockets still connected
+
+//         sendFieldData({
+//           fileds: fields
+//         });
+//     });
+// };
 
 
 // creating a new websocket to keep the content updated without any AJAX request
@@ -150,5 +176,14 @@ var sendUsersData = function(data) {
     tmpSocket.emit('ehlo', data);
   });
 };
-
+// var sendUsersData = function(data) {
+//   // adding the time of the last update
+//   data.time = new Date();
+//   console.log('Pushing new data to the clients connected ( connections amount = %s ) - %s', connectionsArray.length , data.time);
+//   // sending new data to all the sockets connected
+//   console.log(data)
+//   connectionsArray.forEach(function(tmpSocket) {
+//     tmpSocket.emit('ehlo', data);
+//   });
+// };
 console.log('Please use your browser to navigate to http://localhost:8000');

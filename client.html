@@ -30,6 +30,7 @@
         <div id="container">Loading ...</div>
     <script src="socket.io/socket.io.js"></script>
     <script src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <th><INPUT type="checkbox" onchange="checkAll(this)" name="chk[]" /> Check/Uncheck All </th>
     <div class="checkBoxUserContainer"></div>
     <div class="checkBoxFieldContainer"></div>
     <div class="notificationContainer"></div>
@@ -53,23 +54,29 @@
 
 // container.appendChild(checkbox);
 // container.appendChild(label);
+
+
+
+
 console.log(data)
-var usersArray =[];
-var filedArray = ["name" , "description" , "image"];
+var userArray =[];
+// to get the value of fields
+var fieldArray = Object.keys(data.users[0]);
 	$.each(data.users,function(index,user){
-		usersArray.push(user.user_name)
+		userArray.push(user)
 
 	});
 
 	$(document).ready(function(){
 
 
-			$.each(usersArray,function(index,value){
-				var checkbox="<label for="+value+">"+value+"</label><input type='checkbox' id="+value+" value="+value+" name= 'user'>"
+			$.each(userArray,function(index,value){
+				var checkbox="<label for="+value.user_id+">"+value.user_name+"</label><input type='checkbox' id="+value.user_id+" value="+value.user_id+" name= 'user'>"
 				$(".checkBoxUserContainer").append($(checkbox));
+				console.log(value)
 			})
 
-			$.each(filedArray,function(index,value){
+			$.each(fieldArray,function(index,value){
 				var checkbox="<label for="+value+">"+value+"</label><input type='checkbox' id="+value+" value="+value+" name= 'field'>"
 				$(".checkBoxFieldContainer").append($(checkbox));
 			})
@@ -78,37 +85,58 @@ var filedArray = ["name" , "description" , "image"];
 	});
 
 	socket.on('notification', function (data) {
-		        var usersList = "<dl>";
-		        $.each(data.users,function(index,user){
-		            usersList += "<dt>" + user.user_name + "</dt>\n" +
-		                         "<dd>" + user.user_description + "\n" +
-		                            "<figure> <img class='img-polaroid' width='50px' src='" + user.user_img + "' /></figure>"
-		                         "</dd>";
-		        });
-		        usersList += "</dl>";
-		        $(".notificationContainer").html($(usersList));
-
-
+		 
 		        var userChecked = [];
             	$.each($("input[name='user']:checked"), function(){            
                 	userChecked.push($(this).val());
             	});
-            	var filedChecked = [];
+            	var fieldChecked = [];
             	$.each($("input[name='field']:checked"), function(){            
-                	filedChecked.push($(this).val());
+                	fieldChecked.push($(this).val());
             	});
-            	console.log(userChecked)
-            	console.log(filedChecked)
-            	// alert("My favourite sports are: " + favorite.join(", "));
-		        // $('#container').html(usersList);
-		   
-		        // $('time').html('Last Update:' + data.time);
 
+            	var usersList = "<div>";
+		        $.each(data.users,function(index,user){
+		        	var foundUser = $.inArray(String(user.user_id), userChecked) > -1
+		        	if(foundUser){
+
+		          		var fieldArray = Object.keys(data.users[0]);
+		          		console.log(fieldArray)
+		          		$.each(fieldArray,function(index,field){
+				        	var foundField = $.inArray(String(field), fieldChecked) > -1
+				        	if(foundField){
+				        		usersList += "<dd>" + user[field] + "\n" +
+				                         "</dd>";
+				        	}
+				        });
+
+		        	}
+		        });
+		        usersList += " </div>";
+		        $(".notificationContainer").html($(usersList));
       	});
 
 
       	})
 
+
+function checkAll(ele) {
+     var checkboxes = document.getElementsByTagName('input');
+     if (ele.checked) {
+         for (var i = 0; i < checkboxes.length; i++) {
+             if (checkboxes[i].type == 'checkbox') {
+                 checkboxes[i].checked = true;
+             }
+         }
+     } else {
+         for (var i = 0; i < checkboxes.length; i++) {
+             console.log(i)
+             if (checkboxes[i].type == 'checkbox') {
+                 checkboxes[i].checked = false;
+             }
+         }
+     }
+ }
 
     </script>
     </body>
