@@ -4,14 +4,17 @@ var app = require('http').createServer(handler),
     mysql = require('mysql'),
     connectionsArray = [],
     connection = mysql.createConnection({
-        host: 'localhost',     //Database username
+        host: 'localhost',     //Database host
         user: 'root',          //Database username
-        password: 'Hello123',  //Database password
-        database: 'socketTest', //Database name
+        password: 'YOUR_DATABASE_PASSWORD',  //Database password
+        database: 'realtimeNotification', //Database name
         port: 3306
     }),
-    POLLING_INTERVAL = 100,
+    POLLING_INTERVAL = 1000,
     pollingTimer;
+
+// creating the server ( localhost:8000 )
+app.listen(8000);
 
 // If there is an error connecting to the database
 connection.connect(function(err) {
@@ -19,10 +22,34 @@ connection.connect(function(err) {
     if (err) {
         console.log(err);
     }
+    console.log("Server Started....")
 });
 
-// creating the server ( localhost:8000 )
-app.listen(8000);
+// creating a new websocket to keep the content updated without any AJAX request
+io.sockets.on('connection', function(socket) {
+
+    console.log('Number of connections:' + connectionsArray.length);
+    // starting the loop only if at least there is one user connected
+
+    if (!connectionsArray.length) {
+        pollingLoop();
+    }
+    socket.on('disconnect', function() {
+        var socketIndex = connectionsArray.indexOf(socket);
+        console.log('socketID = %s got disconnected', socketIndex);
+        if (~socketIndex) {
+            connectionsArray.splice(socketIndex, 1);
+        }
+    });
+
+    console.log('A new socket is connected!');
+    connectionsArray.push(socket);
+
+    // getting index of new socket
+    var newSocketIndex = connectionsArray.indexOf(socket);
+    getUsersData(newSocketIndex);
+});
+
 
 // on server started we can load our client.html page
 function handler(req, res) {
@@ -72,7 +99,7 @@ var pollingLoop = function() {
 };
 
 
-var getUsersData = function() {
+var getUsersData = function(socketIndex) {
 
     // Doing the database query
     var query = connection.query('SELECT * FROM users'),
@@ -94,42 +121,17 @@ var getUsersData = function() {
 
             sendUsersData({
                 users: users
-            });
+            }, socketIndex);
         });
 };
 
+// sending new data to all the sockets connected
 var updateSockets = function(data) {
-    // sending new data to all the sockets connected
     connectionsArray.forEach(function(tmpSocket) {
         tmpSocket.volatile.emit('notification', data);
     });
 };
-var sendUsersData = function(data) {
-    connectionsArray.forEach(function(tmpSocket) {
-        tmpSocket.emit('ehlo', data);
-    });
+var sendUsersData = function(data, socketIndex) {
+    // sending user data to just new web socket 
+    connectionsArray[socketIndex].emit('ehlo', data);
 };
-
-// creating a new websocket to keep the content updated without any AJAX request
-io.sockets.on('connection', function(socket) {
-
-    console.log('Number of connections:' + connectionsArray.length);
-    // starting the loop only if at least there is one user connected
-
-    if (!connectionsArray.length) {
-        getUsersData()
-        pollingLoop();
-    }
-
-    socket.on('disconnect', function() {
-        var socketIndex = connectionsArray.indexOf(socket);
-        console.log('socketID = %s got disconnected', socketIndex);
-        if (~socketIndex) {
-            connectionsArray.splice(socketIndex, 1);
-        }
-    });
-
-    console.log('A new socket is connected!');
-    connectionsArray.push(socket);
-
-});
